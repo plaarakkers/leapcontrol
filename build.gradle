@@ -1,0 +1,44 @@
+apply plugin: "java"
+apply plugin:'application'
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.4'
+}
+
+mainClassName = "nl.gellygwyn.leapcontrol.LeapControl"
+
+sourceCompatibility = "1.8"
+[compileJava, compileTestJava]*.options*.encoding = "UTF-8"
+
+if (!hasProperty("mainClass")) {
+    ext.mainClass = mainClassName
+}
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs "lib"
+    }
+}
+
+dependencies {
+    compile "ch.qos.logback:logback-classic:1.1.3"
+    compile name: "LeapJava"
+    testCompile "org.mockito:mockito-core:1.10.19"
+    testCompile "org.hamcrest:hamcrest-junit:2.0.0.0"
+    testCompile "junit:junit:4.12"
+}
+
+tasks.withType(JavaExec) {
+    systemProperty "java.library.path", "src/dist/lib/linux/x64"
+}
+
+tasks.withType(CreateStartScripts) {
+    defaultJvmOpts = ["-Djava.library.path=../lib/linux/x64",
+                      "-Dlogback.configurationFile=REPLACE_APP_HOME/conf/logback.xml"]
+
+    doLast {
+        unixScript.text = unixScript.text.replace('REPLACE_APP_HOME', '\$APP_HOME')
+        windowsScript.text = "echo Currently not supported in the build"
+    }
+}
