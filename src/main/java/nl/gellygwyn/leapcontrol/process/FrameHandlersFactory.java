@@ -5,6 +5,7 @@ import java.awt.Robot;
 import nl.gellygwyn.leapcontrol.LeapControlRuntimeException;
 import nl.gellygwyn.leapcontrol.process.frameactions.CloseApplicationFrameAction;
 import nl.gellygwyn.leapcontrol.process.frameactions.LoggingFrameAction;
+import nl.gellygwyn.leapcontrol.process.frameactions.MinimizeApplicationFrameAction;
 
 /**
  * Factory class for initializing the {@link FrameHandlers}
@@ -26,6 +27,7 @@ public class FrameHandlersFactory {
         }
         frameHandlers.addHandler(new FrameHandler(new LoggingFrameAction(), false));
         frameHandlers.addHandler(new FrameHandler(new CloseApplicationFrameAction(robot)));
+        frameHandlers.addHandler(new FrameHandler(new MinimizeApplicationFrameAction(robot)));
     }
 
     public static FrameHandlers getFrameHandlers() {

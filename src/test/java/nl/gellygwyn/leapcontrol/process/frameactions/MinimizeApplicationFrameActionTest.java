@@ -1,9 +1,11 @@
 package nl.gellygwyn.leapcontrol.process.frameactions;
 
+import com.leapmotion.leap.Finger;
 import com.leapmotion.leap.FingerList;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
 import com.leapmotion.leap.HandList;
+import com.leapmotion.leap.Vector;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import org.junit.Before;
@@ -21,38 +23,38 @@ import static org.mockito.Mockito.when;
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
- * Tests for the {@link CloseApplicationFrameAction}
+ * Tests for the {@link MinimizeApplicationFrameAction}
  */
 @RunWith(MockitoJUnitRunner.class)
-public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
+public class MinimizeApplicationFrameActionTest extends BaseFrameActionTest {
 
     @Mock
     private Robot robot;
 
     @Mock
-    private HandList extendedRightHandList;
+    private HandList frame1RightHandList;
 
     @Mock
-    private HandList closedRightHandList;
+    private HandList frame2RightHandList;
 
     @Mock
-    Frame frame1;
+    private Frame frame1;
 
     @Mock
-    Frame frame2;
+    private Frame frame2;
 
     @Before
     public void before() {
-        frameAction = new CloseApplicationFrameAction(robot);
+        frameAction = new MinimizeApplicationFrameAction(robot);
 
-        when(frame1.hands()).thenReturn(extendedRightHandList);
-        when(frame2.hands()).thenReturn(closedRightHandList);
+        when(frame1.hands()).thenReturn(frame1RightHandList);
+        when(frame2.hands()).thenReturn(frame2RightHandList);
 
-        initHandList(extendedRightHandList, 5);
-        initHandList(closedRightHandList, 0);
+        initHandList(frame1RightHandList, 100);
+        initHandList(frame2RightHandList, 20);
     }
 
-    private void initHandList(HandList handList, int extendedFingersCount) {
+    private void initHandList(HandList handList, float xPosition) {
         Hand hand = mock(Hand.class);
         when(hand.isValid()).thenReturn(true);
         when(hand.isRight()).thenReturn(true);
@@ -64,7 +66,19 @@ public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
         FingerList extendedFingerList = mock(FingerList.class);
         when(fingerList.extended()).thenReturn(extendedFingerList);
 
-        when(extendedFingerList.count()).thenReturn(extendedFingersCount);
+        FingerList indexFingerList = mock(FingerList.class);
+        when(extendedFingerList.fingerType(Finger.Type.TYPE_INDEX)).thenReturn(indexFingerList);
+
+        when(indexFingerList.count()).thenReturn(1);
+
+        Finger indexFinger = mock(Finger.class);
+        when(indexFingerList.get(0)).thenReturn(indexFinger);
+        when(indexFinger.isValid()).thenReturn(true);
+
+        Vector vector = mock(Vector.class);
+        when(indexFinger.tipPosition()).thenReturn(vector);
+
+        when(vector.getX()).thenReturn(xPosition);
 
         when(handList.count()).thenReturn(1);
         when(handList.get(0)).thenReturn(hand);
@@ -78,28 +92,20 @@ public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
 
         //assert
         InOrder inOrder = inOrder(robot);
+        inOrder.verify(robot).keyPress(KeyEvent.VK_CONTROL);
         inOrder.verify(robot).keyPress(KeyEvent.VK_ALT);
-        inOrder.verify(robot).keyPress(KeyEvent.VK_F4);
-        inOrder.verify(robot).keyRelease(KeyEvent.VK_F4);
+        inOrder.verify(robot).keyPress(KeyEvent.VK_0);
+        inOrder.verify(robot).keyRelease(KeyEvent.VK_0);
         inOrder.verify(robot).keyRelease(KeyEvent.VK_ALT);
+        inOrder.verify(robot).keyRelease(KeyEvent.VK_CONTROL);
         inOrder.verifyNoMoreInteractions();
     }
 
     @Test
-    public void multipleOpenHands() {
+    public void samePosition() {
         //act
         frameAction.processFrame(frame1);
         frameAction.processFrame(frame1);
-
-        //assert
-        verifyZeroInteractions(robot);
-    }
-
-    @Test
-    public void multipleClosedHands() {
-        //act
-        frameAction.processFrame(frame2);
-        frameAction.processFrame(frame2);
 
         //assert
         verifyZeroInteractions(robot);
@@ -108,7 +114,7 @@ public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
     @Test
     public void invalidHand() {
         //arrange
-        when(closedRightHandList.get(0).isValid()).thenReturn(false);
+        when(frame1RightHandList.get(0).isValid()).thenReturn(false);
 
         //act
         frameAction.processFrame(frame1);
@@ -127,14 +133,14 @@ public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
         frameAction.processFrame(frame2);
 
         //assert
-        verify(robot, times(2)).keyPress(anyInt());
-        verify(robot, times(2)).keyRelease(anyInt());
+        verify(robot, times(3)).keyPress(anyInt());
+        verify(robot, times(3)).keyRelease(anyInt());
     }
 
     @Test
-    public void notStartedWithExtendedHand() {
+    public void notStartedWithExtendedIndexfinger() {
         //arrange
-        when(extendedRightHandList.get(0).fingers().extended().count()).thenReturn(4);
+        when(frame1RightHandList.get(0).fingers().extended().fingerType(Finger.Type.TYPE_INDEX).count()).thenReturn(0);
 
         //act
         frameAction.processFrame(frame1);
@@ -145,22 +151,10 @@ public class CloseApplicationFrameActionTest extends BaseFrameActionTest {
     }
 
     @Test
-    public void notEndingWithClosedHand() {
+    public void notEnoughMovementToTheLeft() {
         //arrange
-        when(closedRightHandList.get(0).fingers().extended().count()).thenReturn(2);
-
-        //act
-        frameAction.processFrame(frame1);
-        frameAction.processFrame(frame2);
-
-        //assert
-        verifyZeroInteractions(robot);
-    }
-
-    @Test
-    public void leftHand() {
-        //arrange
-        when(closedRightHandList.get(0).isRight()).thenReturn(false);
+        when(frame2RightHandList.get(0).fingers().extended().fingerType(Finger.Type.TYPE_INDEX).get(0).tipPosition()
+            .getX()).thenReturn(25f);
 
         //act
         frameAction.processFrame(frame1);
