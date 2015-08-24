@@ -1,9 +1,10 @@
 package nl.gellygwyn.leapcontrol.process;
 
+import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Frame;
 
 /**
- * Action that processes a frame from
+ * Action that processes a frame from the {@link Controller}
  *
  */
 public interface FrameAction {
