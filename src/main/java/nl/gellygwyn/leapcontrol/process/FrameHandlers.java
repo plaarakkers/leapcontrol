@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * List class that handles a list of {@link FrameHandler}s.
+ * Class that handles a list of {@link FrameHandler}s.
  */
 public class FrameHandlers {
 
